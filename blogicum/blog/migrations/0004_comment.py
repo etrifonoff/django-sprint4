@@ -6,27 +6,60 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('blog', '0003_alter_category_options_alter_location_options_and_more'),
+        ("blog", "0003_alter_category_options_alter_location_options_and_more"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Comment',
+            name="Comment",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('is_published', models.BooleanField(default=True, help_text='Снимите галочку, чтобы скрыть публикацию.', verbose_name='Опубликовано')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Добавлено')),
-                ('text', models.TextField(verbose_name='Комментарий')),
-                ('author', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='author', to=settings.AUTH_USER_MODEL)),
-                ('post', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='comments', to='blog.post')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "is_published",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Снимите галочку, чтобы скрыть публикацию.",
+                        verbose_name="Опубликовано",
+                    ),
+                ),
+                (
+                    "created_at",
+                    models.DateTimeField(auto_now_add=True, verbose_name="Добавлено"),
+                ),
+                ("text", models.TextField(verbose_name="Комментарий")),
+                (
+                    "author",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="author",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "post",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="comments",
+                        to="blog.post",
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'комментарий',
-                'verbose_name_plural': 'Комментарии',
-                'ordering': ('created_at',),
+                "verbose_name": "комментарий",
+                "verbose_name_plural": "Комментарии",
+                "ordering": ("created_at",),
             },
         ),
     ]

@@ -38,6 +38,7 @@ class IndexView(ListView):
     model = Post
     template_name = "blog/index.html"
     paginate_by = POSTS_LIMIT
+    ordering = "-pub_date"
 
     def get_queryset(self):
         return filter_posts(apply_filters=True, add_annotations=True)
@@ -125,7 +126,7 @@ class PostUpdateView(OnlyAuthorMixin, UpdateView):
         )
 
 
-class PostDeleteView(OnlyAuthorMixin, LoginRequiredMixin, DeleteView):
+class PostDeleteView(LoginRequiredMixin, OnlyAuthorMixin, DeleteView):
     template_name = "blog/create.html"
     model = Post
     pk_url_kwarg = "post_id"
@@ -139,6 +140,7 @@ class PostDeleteView(OnlyAuthorMixin, LoginRequiredMixin, DeleteView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         post = self.get_object()
+        post.delete()
         context["form"] = PostForm(instance=post)
         return context
 

@@ -1,6 +1,7 @@
-from blog.models import Post
 from django.db.models import Count
 from django.utils import timezone
+
+from blog.models import Post
 
 
 def filter_posts(
