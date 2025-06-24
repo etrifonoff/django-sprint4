@@ -1,8 +1,9 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse_lazy
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
 from django.views.generic import (
     CreateView,
     DeleteView,
@@ -27,10 +28,6 @@ def add_comment(request, comment_id):
         comment.author = request.user
         comment.post = post
         comment.save()
-    else:
-        return render(
-            request, "blog/comment.html", {"form": form, "post": post}
-        )
     return redirect("blog:post_detail", post_id=comment_id)
 
 
@@ -41,7 +38,7 @@ class IndexView(ListView):
     ordering = "-pub_date"
 
     def get_queryset(self):
-        return filter_posts(apply_filters=True, add_annotations=True)
+        return filter_posts(add_annotations=True)
 
 
 class CategoryPostsView(ListView):
@@ -58,8 +55,6 @@ class CategoryPostsView(ListView):
         selected_category = self.get_category()
         return filter_posts(
             manager=selected_category.posts,
-            apply_filters=True,
-            add_annotations=True,
         ).order_by("-pub_date")
 
     def get_context_data(self, **kwargs):
@@ -79,7 +74,7 @@ class PostCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
     def get_success_url(self):
-        return reverse_lazy(
+        return reverse(
             "blog:profile", kwargs={"username": self.request.user.username}
         )
 
@@ -96,24 +91,21 @@ class PostDetailView(DetailView):
         context["comments"] = self.object.comments.select_related("author")
         return context
 
-    def get_object(self, queryset=None):
-        post = get_object_or_404(
-            (filter_posts(apply_filters=False, add_annotations=False)),
-            id=self.kwargs[self.pk_url_kwarg],
-        )
-        if post.author != self.request.user:
-            post = get_object_or_404(
-                (filter_posts(apply_filters=True, add_annotations=False)),
-                id=self.kwargs[self.pk_url_kwarg],
-            )
-        return post
+    def get_queryset(self):
+        if self.request.user.is_authenticated:
+            user_posts = Post.objects.filter(author=self.request.user)
+            published_posts = filter_posts()
+            return user_posts | published_posts
+        else:
+            return filter_posts()
 
 
-class PostUpdateView(OnlyAuthorMixin, UpdateView):
+class PostUpdateView(OnlyAuthorMixin, UpdateView, LoginRequiredMixin):
     template_name = "blog/create.html"
     model = Post
     form_class = PostForm
     pk_url_kwarg = "post_id"
+    login_url = "login"
 
     def handle_no_permission(self):
         return redirect(
@@ -121,35 +113,38 @@ class PostUpdateView(OnlyAuthorMixin, UpdateView):
         )
 
     def get_success_url(self):
-        return reverse_lazy(
-            "blog:post_detail", kwargs={"post_id": self.object.id}
-        )
+        return reverse("blog:post_detail", kwargs={"post_id": self.object.id})
 
 
 class PostDeleteView(LoginRequiredMixin, OnlyAuthorMixin, DeleteView):
     template_name = "blog/create.html"
     model = Post
     pk_url_kwarg = "post_id"
-    form_class = PostForm
 
     def get_success_url(self):
-        return reverse_lazy(
+        return reverse(
             "blog:profile", kwargs={"username": self.request.user.username}
         )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        post = self.get_object()
-        post.delete()
-        context["form"] = PostForm(instance=post)
+        context["form"] = PostForm(instance=self.object)
         return context
 
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        success_url = self.get_success_url()
+        self.object.delete()
+        return HttpResponseRedirect(success_url)
 
-class CommentUpdateView(CommentMixin, OnlyAuthorMixin, UpdateView):
+
+class CommentUpdateView(
+    LoginRequiredMixin, CommentMixin, OnlyAuthorMixin, UpdateView
+):
     form_class = CommentForm
 
 
-class CommentDeleteView(CommentMixin, DeleteView):
+class CommentDeleteView(LoginRequiredMixin, CommentMixin, DeleteView):
     pass
 
 
@@ -163,13 +158,10 @@ class UserProfileView(ListView):
 
     def get_queryset(self):
         selected_user = self.get_user()
-        queryset = (
-            filter_posts(
-                apply_filters=selected_user != self.request.user,
-                add_annotations=True,
-            )
-            .filter(author=selected_user)
-            .order_by("-pub_date")
+        queryset = filter_posts(
+            manager=selected_user.posts,
+            apply_filters=selected_user != self.request.user,
+            add_annotations=True,
         )
         return queryset
 
@@ -188,6 +180,6 @@ class UserEditView(LoginRequiredMixin, UpdateView):
         return self.request.user
 
     def get_success_url(self):
-        return reverse_lazy(
+        return reverse(
             "blog:profile", kwargs={"username": self.object.username}
         )

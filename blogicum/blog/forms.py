@@ -19,6 +19,14 @@ class CommentForm(forms.ModelForm):
     class Meta:
         model = Comment
         fields = ("text",)
+        widgets = {
+            "text": forms.Textarea(
+                attrs={
+                    "cols": 40,
+                    "rows": 5,
+                }
+            ),
+        }
 
     def clean(self):
         super().clean()

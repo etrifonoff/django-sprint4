@@ -22,6 +22,3 @@ def filter_posts(
         )
 
     return queryset
-    return queryset
-    return queryset
-    return queryset
