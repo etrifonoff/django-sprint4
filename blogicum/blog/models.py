@@ -98,4 +98,7 @@ class Comment(PublishedAndCreatedAtModel):
         verbose_name_plural = "Комментарии"
 
     def __str__(self):
-        return self.text
+        return (
+            f"Комментарий автора {self.author} к посту {self.post}: "
+            f"'{self.text}'"
+        )
