@@ -1,7 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.models import User
-from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import (
@@ -96,16 +95,14 @@ class PostDetailView(DetailView):
             user_posts = Post.objects.filter(author=self.request.user)
             published_posts = filter_posts()
             return user_posts | published_posts
-        else:
-            return filter_posts()
+        return filter_posts()
 
 
-class PostUpdateView(OnlyAuthorMixin, UpdateView, LoginRequiredMixin):
+class PostUpdateView(LoginRequiredMixin, OnlyAuthorMixin, UpdateView):
     template_name = "blog/create.html"
     model = Post
     form_class = PostForm
     pk_url_kwarg = "post_id"
-    login_url = "login"
 
     def handle_no_permission(self):
         return redirect(
@@ -130,12 +127,6 @@ class PostDeleteView(LoginRequiredMixin, OnlyAuthorMixin, DeleteView):
         context = super().get_context_data(**kwargs)
         context["form"] = PostForm(instance=self.object)
         return context
-
-    def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        success_url = self.get_success_url()
-        self.object.delete()
-        return HttpResponseRedirect(success_url)
 
 
 class CommentUpdateView(

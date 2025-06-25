@@ -1,7 +1,6 @@
+from core.models import PublishedAndCreatedAtModel
 from django.contrib.auth import get_user_model
 from django.db import models
-
-from core.models import PublishedAndCreatedAtModel
 
 User = get_user_model()
 
@@ -84,19 +83,17 @@ class Comment(PublishedAndCreatedAtModel):
         Post,
         on_delete=models.CASCADE,
         null=True,
-        related_name="comments",
-        verbose_name="комментарий",
     )
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         null=True,
-        related_name="authors",
         verbose_name="автор",
     )
 
     class Meta:
         ordering = ("created_at",)
+        default_related_name = "comments"
         verbose_name = "комментарий"
         verbose_name_plural = "Комментарии"
 
